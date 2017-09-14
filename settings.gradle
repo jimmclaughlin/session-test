@@ -1,0 +1,4 @@
+include 'cluster'
+include 'client'
+
+rootProject.name = 'session-test'

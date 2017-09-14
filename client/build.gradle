@@ -1,0 +1,28 @@
+
+apply plugin: 'groovy'
+
+dependencies {
+
+    // Use the latest Groovy version for Spock testing
+    compile "org.codehaus.groovy:groovy-all:$groovy_version"
+
+
+    compile ("org.codehaus.groovy.modules.http-builder:http-builder:$groovy_http_builder_version") {
+        exclude (module: 'groovy')
+    }
+
+    compile "org.codehaus.gpars:gpars:$gpars_version"
+
+    compile "de.gesellix:docker-client:$docker_client_version"
+
+    // Logging
+    compile  "org.slf4j:slf4j-api:$slf4j_version"
+
+    runtime "ch.qos.logback:logback-classic:$logback_version"
+    runtime "ch.qos.logback:logback-core:$logback_version"
+
+    compile "org.hdrhistogram:HdrHistogram:$hdr_histogram_version"
+
+}
+
+
