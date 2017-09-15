@@ -32,3 +32,29 @@ dependencies {
 
   testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
 }
+
+docker {
+    registryCredentials {
+        url = 'https://registry.imanage.com/'
+    }
+    javaApplication {
+        baseImage = 'registry.imanage.com/m-java8:1.0.16'
+        maintainer = 'Jim McLaughlin "james.mclaughlin@imanage.com"'
+        ports = [5050]
+        tag = 'sessiontest:latest'
+    }
+
+}
+
+dockerDistTar {
+    label {[SERVICE_8082_NAME          : "sessiontest"]}
+    label {[SERVICE_8082_CHECK_TCP     : "true"]}
+    label {[SERVICE_8082_CHECK_INTERVAL: "30s"]}
+    label {[SERVICE_8082_CHECK_TIMEOUT : "3s"]}
+
+    //runCommand ('apt-get update && apt-get install -y curl jq')
+    //addFile ("vault-scripts.tar.gz", '/vault-scripts')
+
+
+    //dependsOn (copyVaultScripts)
+    }

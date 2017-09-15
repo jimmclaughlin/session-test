@@ -12,6 +12,7 @@ import ratpack.groovy.template.MarkupTemplateModule
 import ratpack.handling.RequestLogger
 import ratpack.http.Status
 import ratpack.hystrix.HystrixModule
+import ratpack.rx.RxRatpack
 import service.LoginService
 
 import static ratpack.groovy.Groovy.ratpack
@@ -26,8 +27,10 @@ ratpack {
 
     bindings {
 
-
-        def loginProps = ['redis.uri' :'redis-sentinel://sentinel1:26379,sentinel2:26379,sentinel3:26379/0#SessionMaster']
+        def sentinel1 = 'sentinel1.service.imanagecloud.com:26379'
+        def sentinel2 = 'sentinel2.service.imanagecloud.com:26379'
+        def sentinel3 = 'sentinel3.service.imanagecloud.com:26379'
+        def loginProps = ['redis.uri' :"redis-sentinel://${sentinel1},${sentinel2},${sentinel3}/0#redismaster"]
 
         module MarkupTemplateModule
         module new HystrixModule ().sse ()
@@ -43,12 +46,12 @@ ratpack {
         path ("login") {
             byMethod {
                 post {
-                    parse (Form)
+                    def authResult = parse (Form)
                             .observe ()
                             .flatMap { Form form -> loginService.login (form.username, form.password) }
-                            .single ()
-                            .subscribe (
-                            { String result ->
+
+                    RxRatpack.promise (authResult)
+                            .then ({ String result ->
                                 response.cookie ("X-Auth-Token", result)
                                 response.send ("OK")
                             })
@@ -62,17 +65,16 @@ ratpack {
                 get {
                     def user = pathTokens ["user"]
                     def cookie = request.cookies.find { it.name () == 'X-Auth-Token' }
-                    loginService.isAuthenticated (user, cookie.value ())
-                            .subscribe (
-                            {authenticated ->
+                    def authResult = loginService.isAuthenticated (user, cookie.value ())
+                    RxRatpack.promise (authResult)
+                            .then ({authenticated ->
                                 if (authenticated) {
                                     response.status (Status.of (204))
                                 } else {
                                     response.status (Status.of (404))
                                 }
                                 response.send ()
-                            }
-                    )
+                            })
                 }
             }
         }
@@ -82,13 +84,20 @@ ratpack {
                 get {
                     def user = pathTokens ["user"]
                     def cookie = request.cookies.find { it.name () == 'X-Auth-Token' }
-                    loginService.logout (user, cookie.value ())
-                            .subscribe (
+                    if (!cookie) {
+                        response.status (Status.of (400))
+                        response.send ("Logout requires Token")
+                    } else {
+                        
+                        def logoutResult = loginService.logout (user, cookie.value ())
+                        RxRatpack.promise (logoutResult)
+                            .then (
                             { Long result ->
                                 response.expireCookie ("X-Auth-Token")
                                 response.status (Status.of (204))
                                 response.send ()
                             })
+                    }
 
                 }
             }

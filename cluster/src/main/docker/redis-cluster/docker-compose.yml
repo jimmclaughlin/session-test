@@ -4,56 +4,87 @@ version: '2.1'
 
 services:
 
-  redis-master:
+  redismaster:
     image: redis:3.2.5-alpine
-    container_name: redis-master
+    container_name: redismaster
     volumes:
       - "./.data:/data"
     network_mode: bridge
-    # ports:
-    #   - "6379:6379"
-    build:
-      context: .
-      labels:
-        SERVICE_6379_NAME: "redis-master"
-        SERVICE_6379_CHECK_TCP: "true"
-        SERVICE_6379_CHECK_INTERVAL: "30s"
-        SERVICE_6379_CHECK_TIMEOUT: "3s"
+    ports:
+      - "6379:6379"
+    labels:
+      - "SERVICE_6379_NAME=redismaster"
+      - "SERVICE_6379_CHECK_TCP=true"
+      - "SERVICE_6379_CHECK_INTERVAL=30s"
+      - "SERVICE_6379_CHECK_TIMEOUT=3s"
 
 
-  redis-slave:
+  redisslave:
     image: redis:3.2.5-alpine
+    container_name: redisslave
     network_mode: bridge
-    command: redis-server --slaveof redis-master 6379
+    command: redis-server --slaveof redismaster.service.imanagecloud.com 6379
     volumes:
       - "./.data:/data"
+    depends_on:
+      - redismaster
+    labels:
+      - "SERVICE_6379_NAME=redisslave"
+      - "SERVICE_6379_CHECK_TCP=true"
+      - "SERVICE_6379_CHECK_INTERVAL=30s"
+      - "SERVICE_6379_CHECK_TIMEOUT=3s"
+
 
   # Instance 1
   sentinel1:
     network_mode: bridge
     build:
       context: ./redis-sentinel
+    depends_on:
+      - redismaster
+    labels:
+      - "SERVICE_26379_NAME=sentinel1"
+      - "SERVICE_26379_CHECK_TCP=true"
+      - "SERVICE_26379_CHECK_INTERVAL=30s"
+      - "SERVICE_26379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
 
   # Instance 2
   sentinel2:
     network_mode: bridge
     build:
       context: ./redis-sentinel
+    depends_on:
+      - redismaster
+    restart: on-failure:12
+    labels:
+      - "SERVICE_26379_NAME=sentinel2"
+      - "SERVICE_26379_CHECK_TCP=true"
+      - "SERVICE_26379_CHECK_INTERVAL=30s"
+      - "SERVICE_26379_CHECK_TIMEOUT=3s"
 
   # Instance 3
   sentinel3:
     network_mode: bridge
     build:
       context: ./redis-sentinel
-
-  gremlins:
-    image: qualimente/gremlins
     depends_on:
-      - redis-master
-    volumes:
-      - ./gremlins/profiles:/app/gremlins/profiles
-    command: gremlins -m gremlins.profiles.redis_faults -p redis_faults.profile
-    network_mode: "service:redis-master"
-    pid: host
-    cap_add:
-      - NET_ADMIN
+      - redismaster
+    restart: on-failure:12
+    labels:
+      - "SERVICE_26379_NAME=sentinel3"
+      - "SERVICE_26379_CHECK_TCP=true"
+      - "SERVICE_26379_CHECK_INTERVAL=30s"
+      - "SERVICE_26379_CHECK_TIMEOUT=3s"
+  # gremlins:
+  #   image: qualimente/gremlins
+  #   depends_on:
+  #     - redismaster
+  #   volumes:
+  #     - ./gremlins/profiles:/app/gremlins/profiles
+  #   command: gremlins -m gremlins.profiles.redis_faults -p redis_faults.profile
+  #   network_mode: "service:redismaster"
+  #   pid: host
+  #   cap_add:
+  #     - NET_ADMIN
