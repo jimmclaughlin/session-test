@@ -20,17 +20,18 @@ repositories {
 }
 
 dependencies {
-  // Default SLF4J binding.  Note that this is a blocking implementation.
-  // See here for a non blocking appender http://logging.apache.org/log4j/2.x/manual/async.html
-  runtime 'org.slf4j:slf4j-simple:1.7.25'
 
-  compile ratpack.dependency("dropwizard-metrics")
-  compile ratpack.dependency("rx")
-  compile ratpack.dependency("hystrix")
+    compile ratpack.dependency("dropwizard-metrics")
+    compile ratpack.dependency("rx")
+    compile ratpack.dependency("hystrix")
 
-  compile 'biz.paluch.redis:lettuce:4.4.1.Final'
+    compile 'biz.paluch.redis:lettuce:4.4.1.Final'
+    compile 'org.apache.commons:commons-pool2:2.4.2'
 
-  testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
+    runtime "ch.qos.logback:logback-classic:1.2.3"
+    runtime "ch.qos.logback:logback-core:1.2.3"
+
+    testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
 }
 
 docker {
@@ -52,9 +53,10 @@ dockerDistTar {
     label {[SERVICE_8082_CHECK_INTERVAL: "30s"]}
     label {[SERVICE_8082_CHECK_TIMEOUT : "3s"]}
 
-    //runCommand ('apt-get update && apt-get install -y curl jq')
+    runCommand ('apt-get update')
+    runCommand ('DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ipsec-tools racoon iputils-ping iproute2 tcpdump')
     //addFile ("vault-scripts.tar.gz", '/vault-scripts')
 
 
     //dependsOn (copyVaultScripts)
-    }
+}

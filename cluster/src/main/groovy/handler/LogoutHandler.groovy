@@ -2,13 +2,13 @@ package handler
 
 import ratpack.handling.Context
 import ratpack.handling.Handler
-import service.LoginService
+import service.SessionService
 
 class LogoutHandler implements Handler {
 
-    private final LoginService loginService
+    private final SessionService loginService
 
-    LogoutHandler (LoginService loginService) {
+    LogoutHandler (SessionService loginService) {
         this.loginService = loginService
     }
 

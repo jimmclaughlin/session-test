@@ -1,0 +1,177 @@
+version: '2.2'
+
+
+
+services:
+
+  redismaster:
+    image: redismaster:latest
+    init: true
+    container_name: redismaster
+    volumes:
+      - "./.data:/data"
+      - "/lib/modules:/lib/modules"
+      - "/dev/random:/dev/random"
+      - "/dev/urandom:/dev/urandom"
+#    network_mode: bridge
+    privileged: true
+    cap_add:
+      - ALL
+    command: /secure_master.sh
+    ports:
+      - "6379:6379"
+    networks:
+      default:
+        ipv4_address: 172.18.0.102
+    labels:
+      - "SERVICE_6379_NAME=redismaster"
+      - "SERVICE_6379_CHECK_TCP=true"
+      - "SERVICE_6379_CHECK_INTERVAL=30s"
+      - "SERVICE_6379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
+
+  redisslave1:
+    image: redisslave1:latest
+    init: true
+    container_name: redisslave1
+#    network_mode: bridge
+    privileged: true
+    cap_add:
+      - ALL
+    command: /secure_slave.sh
+    volumes:
+      - "./.data:/data"
+      - "/lib/modules:/lib/modules"
+      - "/dev/random:/dev/random"
+      - "/dev/urandom:/dev/urandom"
+    depends_on:
+      - redismaster
+    networks:
+      default:
+        ipv4_address: 172.18.0.103
+    labels:
+      - "SERVICE_6379_NAME=redisslave1"
+      - "SERVICE_6379_CHECK_TCP=true"
+      - "SERVICE_6379_CHECK_INTERVAL=30s"
+      - "SERVICE_6379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
+  redisslave2:
+    image: redisslave2:latest
+    init: true
+    container_name: redisslave2
+    privileged: true
+    cap_add:
+      - ALL
+#    network_mode: bridge
+    command: /secure_slave.sh
+    volumes:
+      - "./.data:/data"
+      - "/lib/modules:/lib/modules"
+      - "/dev/random:/dev/random"
+      - "/dev/urandom:/dev/urandom"
+    depends_on:
+      - redismaster
+    networks:
+      default:
+        ipv4_address: 172.18.0.104
+    labels:
+      - "SERVICE_6379_NAME=redisslave2"
+      - "SERVICE_6379_CHECK_TCP=true"
+      - "SERVICE_6379_CHECK_INTERVAL=30s"
+      - "SERVICE_6379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
+  sentinel1:
+    image: sentinel1:latest
+    init: true
+    container_name: sentinel1
+    privileged: true
+    cap_add:
+      - ALL
+#    network_mode: bridge
+    command: /secure_sentinel.sh
+    volumes:
+      - "./.data:/data"
+      - "/lib/modules:/lib/modules"
+      - "/dev/random:/dev/random"
+      - "/dev/urandom:/dev/urandom"
+    depends_on:
+      - redismaster
+    networks:
+      default:
+        ipv4_address: 172.18.0.105
+    labels:
+      - "SERVICE_26379_NAME=sentinel1"
+      - "SERVICE_26379_CHECK_TCP=true"
+      - "SERVICE_26379_CHECK_INTERVAL=30s"
+      - "SERVICE_26379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
+  sentinel2:
+    image: sentinel2:latest
+    init: true
+    container_name: sentinel2
+    privileged: true
+    cap_add:
+      - ALL
+#    network_mode: bridge
+    command: /secure_sentinel.sh
+    volumes:
+      - "./.data:/data"
+      - "/lib/modules:/lib/modules"
+      - "/dev/random:/dev/random"
+      - "/dev/urandom:/dev/urandom"
+    depends_on:
+      - redismaster
+    networks:
+      default:
+        ipv4_address: 172.18.0.106
+    labels:
+      - "SERVICE_26379_NAME=sentinel2"
+      - "SERVICE_26379_CHECK_TCP=true"
+      - "SERVICE_26379_CHECK_INTERVAL=30s"
+      - "SERVICE_26379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
+  sentinel3:
+    image: sentinel3:latest
+    init: true
+    container_name: sentinel3
+    privileged: true
+    cap_add:
+      - ALL
+#    network_mode: bridge
+    command: /secure_sentinel.sh
+    volumes:
+      - "./.data:/data"
+      - "/lib/modules:/lib/modules"
+      - "/dev/random:/dev/random"
+      - "/dev/urandom:/dev/urandom"
+    depends_on:
+      - redismaster
+    networks:
+      default:
+        ipv4_address: 172.18.0.107
+    labels:
+      - "SERVICE_26379_NAME=sentinel3"
+      - "SERVICE_26379_CHECK_TCP=true"
+      - "SERVICE_26379_CHECK_INTERVAL=30s"
+      - "SERVICE_26379_CHECK_TIMEOUT=3s"
+    restart: on-failure:12
+
+  gremlins:
+    image: qualimente/gremlins
+    volumes:
+      - ./gremlins/profiles:/app/gremlins/profiles
+    network_mode: "service:redismaster"
+    pid: host
+    cap_add:
+      - NET_ADMIN
+
+
+networks:
+ default:
+  external:
+    name: docker_default
